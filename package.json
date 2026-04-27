@@ -35,7 +35,8 @@
     "testEnvironment": "jsdom",
     "setupFiles": [
       "<rootDir>/jest.setup.js"
-    ]
+    ],
+    "testPathIgnorePatterns": ["<rootDir>/e2e-tests/"]
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
@@ -44,6 +45,7 @@
     "@babel/preset-react": "^7.28.5",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.59.1",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "babel-jest": "^30.3.0",

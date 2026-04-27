@@ -22,5 +22,8 @@ jobs:
       - name: Check style
         run: npm run lint
 
+      - name: Check run test
+        run: npm run test
+
       - name: Check run playwright
         run: npm run eslint
