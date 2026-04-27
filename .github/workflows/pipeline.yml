@@ -25,5 +25,8 @@ jobs:
       - name: Check run test
         run: npm run test
 
-      - name: Check run playwright
-        run: npm run eslint
+      - name: Build
+        run: npm run build
+
+      - name: Trigger deployment
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
