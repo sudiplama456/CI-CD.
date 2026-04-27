@@ -5,17 +5,17 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    types: [opened, synchronize]
 
 jobs:
   simple_deployment_pipeline:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
 
@@ -25,18 +25,60 @@ jobs:
       - name: Check style
         run: npm run lint
 
-      - name: Check run test
+      - name: Run tests
         run: npm run test
 
       - name: Build
         run: npm run build
 
+  deploy:
+    needs: [simple_deployment_pipeline]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
+
+    steps:
+      - name: Trigger deployment
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+  tag_release:
+    needs: [simple_deployment_pipeline]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
+
+    steps:
       - name: Bump version and push tag
-        if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
         uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
 
-      - name: Trigger deployment
-        if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
-        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+  notify_success:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: ${{ success() && github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
+
+    steps:
+      - name: Discord success notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Deployment successful
+          description: New version deployed from ${{ github.sha }}
+          color: 0x00ff00
+
+  notify_failure:
+    needs: [simple_deployment_pipeline]
+    runs-on: ubuntu-latest
+    if: ${{ failure() }}
+
+    steps:
+      - name: Discord failure notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Build failed
+          description: |
+            Repo: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+          color: 0xff0000
