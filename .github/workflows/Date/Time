@@ -1,0 +1,17 @@
+name: Exercise workflow
+
+on:
+  push:
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Print date
+        run: date
+
+      - name: List directory contents
+        run: ls -l
